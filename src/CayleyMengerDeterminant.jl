@@ -1,8 +1,8 @@
 module CayleyMengerDeterminant
 using LinearAlgebra
 
-struct CayleyMengerDistanceMatrix{M <: AbstractMatrix}
-
+struct CayleyMengerDistanceMatrix{T, V <: AbstractVector{T}}
+    distances::V
 end
 
 end
