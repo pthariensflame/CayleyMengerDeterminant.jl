@@ -7,9 +7,9 @@ index_triangular_nodiag(ixA, ixB) = binomial(ixA - 1, 2) + ixB
 
 ### main matrix type
 
-struct CayleyMengerDistanceMatrix{T<:Real,V<:AbstractVector{T}} <: AbstractMatrix{T}
+struct CayleyMengerDistanceMatrix{T<:Real} <: AbstractMatrix{T}
     simplex_dimensions::Int
-    square_distances::V
+    square_distances::Vector{T}
 end
 
 CayleyMengerDistanceMatrix(onlyPoint::Tuple{}) = CayleyMengerDistanceMatrix(0, (Union{})[])
@@ -41,16 +41,12 @@ Base.:(==)(A::CayleyMengerDistanceMatrix, B::CayleyMengerDistanceMatrix) =
 
 Base.isequal(A::CayleyMengerDistanceMatrix, B::CayleyMengerDistanceMatrix) =
     (A.simplex_dimensions == B.simplex_dimensions) &&
-    all(Base.isequal.(A.square_distances, B.square_distances))
+    all(isequal.(A.square_distances, B.square_distances))
 
-function Base.hash(A::CayleyMengerDistanceMatrix, h::UInt)
-    nh = h
-    nh = Base.hash(A.simplex_dimensions, nh)
-    nh = Base.hash(A.square_distances, nh)
-    nh
-end
+Base.hash(A::CayleyMengerDistanceMatrix, h::UInt) =
+    hash(A.square_distances, hash(A.simplex_dimensions, h))
 
-# conversion
+# conversion and promotion
 
 Base.widen(A::CayleyMengerDistanceMatrix) =
     CayleyMengerDistanceMatrix(A.simplex_dimensions, widen.(A.square_distances))
@@ -58,7 +54,12 @@ Base.widen(A::CayleyMengerDistanceMatrix) =
 Base.convert(T::Type{<:Real}, A::CayleyMengerDistanceMatrix) =
     CayleyMengerDistanceMatrix(A.simplex_dimensions, convert.(T, A.square_distances))
 
-### Abstract array interface
+Base.promote_rule(
+    ::Type{<:CayleyMengerDistanceMatrix{T}},
+    ::Type{<:CayleyMengerDistanceMatrix{U}},
+) where {T<:Real,U<:Real} = CayleyMengerDistanceMatrix{promote_type(T, U)}
+
+### AbstractArray interface
 
 Base.IndexStyle(::Type{<:CayleyMengerDistanceMatrix}) = IndexCartesian()
 
@@ -74,7 +75,7 @@ function Base.getindex(A::CayleyMengerDistanceMatrix{T}, i::Int, j::Int) where {
     return A.square_distances[index_triangular_nodiag(max(i, j), min(i, j))]
 end
 
-### Linear algebra interface
+### LinearAlgebra interface
 
 LinearAlgebra.issymmetric(A::CayleyMengerDistanceMatrix) = true
 
@@ -82,15 +83,16 @@ LinearAlgebra.ishermitian(A::CayleyMengerDistanceMatrix) = true
 
 # the operation
 
-sqrtabsdet(A; convert_input::Union{Nothing,Type} = nothing) =
-    sqrt(abs(det(isnothing(convert_input) ? A : convert(convert_input, A))))
-
-simplex_volume(
+function simplex_volume(
     points::NTuple{N,T}...;
-    convert_distances::Union{Nothing,Type} = nothing,
-) where {N,T<:Real} =
-    sqrtabsdet(CayleyMengerDistanceMatrix(points...), convert_input = convert_distances)
+    distance_type::Union{Nothing,Type{<:Real}} = nothing,
+    ) where {N,T<:Real}
+    distances = CayleyMengerDistanceMatrix(points...)
+    distances.simplex_dimensions == 0 && return false
+    distances_converted = isnothing(distance_type) ? distances : convert(distances, A)
+    sqrt(abs(det(distances_converted)) / (2^N) / (factorial(N)^2))
+end
 
-export sqrtabsdet, simplex_volume
+export simplex_volume
 
 end
