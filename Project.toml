@@ -1,0 +1,13 @@
+name = "CayleyMengerDeterminant"
+uuid = "5b98d230-66e3-4a60-a8a7-ae961925db22"
+authors = ["Alexander Ronald Altman <alexanderaltman@me.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.6"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
