@@ -27,11 +27,11 @@ using Test
         @test m1 == CayleyMengerDistanceMatrix((1,), (0,))
 
 
-        m3 = CayleyMengerDistanceMatrix((0,0,0), (1,0,0), (0,1,0), (0,0,1))
+        m3 = CayleyMengerDistanceMatrix((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1))
         @test m3.simplex_dimensions == 3
         @test size(m3.square_distances) == (6,)
-        @test m3.square_distances == [1,1,2,1,2,2]
-        @test m3 == CayleyMengerDistanceMatrix((1,1,1), (1,1,0), (0,1,1), (1,0,1))
+        @test m3.square_distances == [1, 1, 2, 1, 2, 2]
+        @test m3 == CayleyMengerDistanceMatrix((1, 1, 1), (1, 1, 0), (0, 1, 1), (1, 0, 1))
     end
 
     @testset "simplex_volume" begin
@@ -43,12 +43,12 @@ using Test
         @test simplex_volume((2,), (0,)) == 2
         @test simplex_volume((-1,), (1,)) == 2
 
-        @test simplex_volume((0,0), (1,0), (0,1)) == 1/2
-        @test simplex_volume((0,0), (0,2), (-2,0)) == 2
+        @test simplex_volume((0, 0), (1, 0), (0, 1)) == 1 / 2
+        @test simplex_volume((0, 0), (0, 2), (-2, 0)) == 2
 
-        @test simplex_volume((0,0,0), (1,0,0), (0,1,0), (0,0,1)) == 1/6
-        @test simplex_volume((1,1,1), (1,1,0), (0,1,1), (1,0,1)) == 1/6
-        @test simplex_volume((1,1,1), (1,1,2), (2,1,1), (1,2,1)) == 1/6
-        @test simplex_volume((0,0,0), (0,1,2), (2,1,0), (0,2,0)) == 4/3
+        @test simplex_volume((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)) == 1 / 6
+        @test simplex_volume((1, 1, 1), (1, 1, 0), (0, 1, 1), (1, 0, 1)) == 1 / 6
+        @test simplex_volume((1, 1, 1), (1, 1, 2), (2, 1, 1), (1, 2, 1)) == 1 / 6
+        @test simplex_volume((0, 0, 0), (0, 1, 2), (2, 1, 0), (0, 2, 0)) == 4 / 3
     end
 end

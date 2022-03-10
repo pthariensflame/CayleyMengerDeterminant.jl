@@ -86,7 +86,7 @@ LinearAlgebra.ishermitian(A::CayleyMengerDistanceMatrix) = true
 function simplex_volume(
     points::NTuple{N,T}...;
     distance_type::Union{Nothing,Type{<:Real}} = nothing,
-    ) where {N,T<:Real}
+) where {N,T<:Real}
     distances = CayleyMengerDistanceMatrix(points...)
     distances.simplex_dimensions == 0 && return false
     distances_converted = isnothing(distance_type) ? distances : convert(distances, A)
