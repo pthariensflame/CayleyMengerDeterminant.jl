@@ -1,5 +1,6 @@
 module CayleyMengerDeterminant
+using LinearAlgebra
 
-# Write your package code here.
+
 
 end
