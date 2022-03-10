@@ -15,14 +15,14 @@ using Test
 
     @testset "CayleyMengerDistanceMatrix" begin
         m0 = CayleyMengerDistanceMatrix(())
-        @test m0.simplexDimensions == 1
-        @test size(m0.squareDistances) == (0,)
+        @test m0.simplex_dimensions == 0
+        @test size(m0.square_distances) == (0,)
 
-        
-        m1 = CayleyMengerDistanceMatrix((0,),(1,))
-        @test m1.simplexDimensions == 2
-        @test size(m1.squareDistances) == (1,)
-        @test m1.squareDistances[1] == 1
-        @test m1 == CayleyMengerDistanceMatrix((1,),(2,))
+
+        m1 = CayleyMengerDistanceMatrix((0,), (1,))
+        @test m1.simplex_dimensions == 1
+        @test size(m1.square_distances) == (1,)
+        @test m1.square_distances[1] == 1
+        @test m1 == CayleyMengerDistanceMatrix((1,), (2,))
     end
 end
