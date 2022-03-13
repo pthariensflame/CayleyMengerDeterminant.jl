@@ -90,7 +90,7 @@ function simplex_volume(
     distances = CayleyMengerDistanceMatrix(points...)
     distances.simplex_dimensions == 0 && return false
     distances_converted = isnothing(distance_type) ? distances : convert(distances, A)
-    sqrt(abs(det(distances_converted)) / (2^N) / (factorial(N)^2))
+    sqrt(abs(det(distances_converted)) / (2^N)) / factorial(N)
 end
 
 export simplex_volume
