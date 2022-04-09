@@ -1,5 +1,7 @@
 using CayleyMengerDeterminant
 import InverseFunctions
+import Static: StaticInt
+import StaticArrays: Dynamic
 using Test
 
 @testset "CayleyMengerDeterminant.jl" begin

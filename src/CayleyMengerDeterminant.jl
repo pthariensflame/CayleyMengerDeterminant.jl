@@ -1,7 +1,7 @@
 module CayleyMengerDeterminant
 using LinearAlgebra
 import ArrayInterface
-using Static: StaticInt
+import Static: StaticInt
 using StaticArrays
 import StaticArrays: Dynamic
 import InverseFunctions
@@ -24,7 +24,7 @@ function binomial2 end
 
 @inline binomial2(x::Int)::Int = binomial(x, 2)
 
-@inline binomial2(::StaticInt{X}) where {X} = StaticInt{binomial2(x)}
+@inline binomial2(::StaticInt{X}) where {X} = StaticInt(binomial2(X))
 
 @inline binomial2(::Dynamic) = Dynamic()
 
@@ -44,7 +44,7 @@ function inverse_binomial2 end
 
 @inline inverse_binomial2(x::Int)::Int = (convert(Int, sqrt(8x + 1)) + 1) ÷ 2
 
-@inline inverse_binomial2(::StaticInt{X}) where {X} = StaticInt{inverse_binomial2(x)}
+@inline inverse_binomial2(::StaticInt{X}) where {X} = StaticInt(inverse_binomial2(X))
 
 @inline inverse_binomial2(::Dynamic) = Dynamic()
 
@@ -92,6 +92,12 @@ struct CayleyMengerDistanceMatrix{T<:Real,Sz} <: AbstractMatrix{T}
 
     "The squared distances of points in the simplex, in natural iteration order as initially given, stored flat and triangular for efficiency."
     square_distances::Vector{T}
+
+    function CayleyMengerDistanceMatrix{T,Sz}(simplex_dimensions::Int,square_distances::Vector{T}) where {T<:Real,Sz}
+        @assert Sz == Dynamic || Sz == simplex_dimensions
+        @assert length(square_distances) == binomial2(simplex_dimensions + 1)
+        new{T,Sz}(simplex_dimensions,square_distances)
+    end
 end
 
 CayleyMengerDistanceMatrix(onlyPoint::Tuple{}) =
@@ -147,16 +153,19 @@ Base.hash(A::CayleyMengerDistanceMatrix, h::UInt) =
 
 # conversion and promotion
 
-Base.widen(A::CayleyMengerDistanceMatrix) =
-    CayleyMengerDistanceMatrix(A.simplex_dimensions, widen.(A.square_distances))
+Base.widen(A::CayleyMengerDistanceMatrix{T,Sz}) where {T<:Real,Sz} =
+    CayleyMengerDistanceMatrix{T,Sz}(A.simplex_dimensions, widen.(A.square_distances))
 
-Base.convert(T::Type{<:Real}, A::CayleyMengerDistanceMatrix) =
-    CayleyMengerDistanceMatrix(A.simplex_dimensions, convert.(T, A.square_distances))
+Base.convert(::Type{U}, A::CayleyMengerDistanceMatrix{T,Sz}) where {U<:Real,T<:Real,Sz} =
+    CayleyMengerDistanceMatrix{U,Sz}(A.simplex_dimensions, convert.(U, A.square_distances))
+
+"Computes `only` on all non-`Dynamic()` arguments unless all arguments are `Dynamic()`, in which case it returns `Dynamic()`."
+only_or_dynamic(vals...) = all(vals .== Dynamic()) ? Dynamic() : only([v for v in vals if v != Dynamic()])
 
 Base.promote_rule(
-    ::Type{<:CayleyMengerDistanceMatrix{T}},
-    ::Type{<:CayleyMengerDistanceMatrix{U}},
-) where {T<:Real,U<:Real} = CayleyMengerDistanceMatrix{promote_type(T, U)}
+    ::Type{<:CayleyMengerDistanceMatrix{T,SzT}},
+    ::Type{<:CayleyMengerDistanceMatrix{U,SzU}},
+) where {T<:Real,U<:Real,SzT,SzU} = CayleyMengerDistanceMatrix{promote_type(T, U),only_or_dynamic(SzT, SzU)}
 
 ### AbstractArray interface
 
@@ -258,7 +267,7 @@ function simplex_volume(
 ) where {T<:Real}
     Ty = isnothing(distance_type) ? T : distance_type
     n::Int = distances.simplex_dimensions
-    n == 0 && return simplex_volume((); distance_type)
+    n == 0 && return isnothing(distance_type) ? false : zero(distance_type)
     distances_converted = convert(Ty, distances)
     sqrt(abs(det(distances_converted)) / (2^n)) / factorial(n)
 end
