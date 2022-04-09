@@ -8,7 +8,7 @@ import InverseFunctions
 
 @inline binomial2(x::Int)::Int = binomial(x, 2)
 
-@inline inverse_binomial2(x::Int)::Int = (convert(Int, sqrt(8x+1)) + 1) ÷ 2
+@inline inverse_binomial2(x::Int)::Int = (convert(Int, sqrt(8x + 1)) + 1) ÷ 2
 
 InverseFunctions.inverse(::typeof(binomial2)) = inverse_binomial2
 
@@ -25,7 +25,8 @@ struct CayleyMengerDistanceMatrix{T<:Real,Sz<:Union{Int,StaticInt}} <: AbstractM
     square_distances::Vector{T}
 end
 
-CayleyMengerDistanceMatrix(onlyPoint::Tuple{}) = CayleyMengerDistanceMatrix{Union{},StaticInt{0}}(StaticInt(0), (Union{})[])
+CayleyMengerDistanceMatrix(onlyPoint::Tuple{}) =
+    CayleyMengerDistanceMatrix{Union{},StaticInt{0}}(StaticInt(0), (Union{})[])
 
 function CayleyMengerDistanceMatrix(
     first_point::NTuple{N,T},
@@ -42,6 +43,21 @@ function CayleyMengerDistanceMatrix(
     end
 
     CayleyMengerDistanceMatrix{T,StaticInt{N}}(StaticInt(N), sqr_dists)
+end
+
+function CayleyMengerDistanceMatrix(P::AbstractMatrix{T}) where {T<:Real}
+    ps, n = size(P)
+    @assert (ps == n + 1) "P should be a tall near-square matrix (N+1 by N)"
+
+    sqr_dists = Array{T}(undef, binomial2(n + 1))
+    for pointIxA = 1:(n+1)
+        for pointIxB = 1:(pointIxA-1)
+            pos = index_triangular_nodiag(pointIxA, pointIxB)
+            sqr_dists[pos] = sum((P[pointIxA, :] .- P[pointIxB, :]) .^ 2)
+        end
+    end
+
+    CayleyMengerDistanceMatrix{T,Int}(n, sqr_dists)
 end
 
 export CayleyMengerDistanceMatrix
@@ -106,31 +122,34 @@ ArrayInterface.ismutable(::CayleyMengerDistanceMatrix) = false
 
 ArrayInterface.isstructured(::CayleyMengerDistanceMatrix) = true
 
-ArrayInterface.known_last(::CayleyMengerDistanceMatrix{T}) where {T <: Real} = oneunit(T)
+ArrayInterface.known_first(::CayleyMengerDistanceMatrix{T}) where {T<:Real} = zero(T)
 
-ArrayInterface.parent(A::CayleyMengerDistanceMatrix{T}) where {T <: Real} = convert.(T, A.square_distances)
+ArrayInterface.known_last(::CayleyMengerDistanceMatrix{T}) where {T<:Real} = zero(T)
 
-function ArrayInterface.findstructralnz(A::CayleyMengerDistanceMatrix{T}) where {T <: Real}
+ArrayInterface.parent(A::CayleyMengerDistanceMatrix{T}) where {T<:Real} =
+    convert.(T, A.square_distances)
+
+function ArrayInterface.findstructralnz(A::CayleyMengerDistanceMatrix{T}) where {T<:Real}
     n = A.simplex_dimensions + 1
-    v = n*n - n
+    v = n * n - n
     I = 1:n
     J = Vector{Int}(undef, n)
     V = Vector{T}(undef, v)
     k = 0
-    for i in 1:n
-        for j in 1:(i-1)
+    for i = 1:n
+        for j = 1:(i-1)
             k += 1
             J[k] = j
             V[k] = A.square_distances[index_triangular_nodiag(i, j)]
         end
     end
-    I, J, V 
+    I, J, V
 end
 
-ArrayInterface.getindex(A::CayleyMengerDistanceMatrix, i::Int, j::Int) = A[i,j]
+ArrayInterface.getindex(A::CayleyMengerDistanceMatrix, i::Int, j::Int) = A[i, j]
 
 ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,StaticInt{N}}) where {T<:Real,N} =
-    (StaticInt(N+2), StaticInt(N+2))
+    (StaticInt(N + 2), StaticInt(N + 2))
 
 ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,Int}) where {T<:Real} =
     (A.simplex_dimensions + 2, A.simplex_dimensions + 2)
@@ -147,8 +166,19 @@ function simplex_volume(
     sqrt(abs(det(distances_converted)) / (2^N)) / factorial(N)
 end
 
-simplex_volume(::Tuple{};distance_type::Union{Nothing,Type{<:Real}} = nothing) =
+simplex_volume(::Tuple{}; distance_type::Union{Nothing,Type{<:Real}} = nothing) =
     isnothing(distance_type) ? false : zero(distance_type)
+
+function simplex_volume(
+    P::AbstractMatrix{T};
+    distance_type::Union{Nothing,Type{<:Real}} = nothing,
+) where {T<:Real}
+    Ty = isnothing(distance_type) ? T : distance_type
+    n = size(P, 2)
+    distances = CayleyMengerDistanceMatrix(P)
+    distances_converted = convert(Ty, distances)
+    sqrt(abs(det(distances_converted)) / (2^n)) / factorial(n)
+end
 
 export simplex_volume
 

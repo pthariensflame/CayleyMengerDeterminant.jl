@@ -3,8 +3,8 @@ import InverseFunctions
 using Test
 
 @testset "CayleyMengerDeterminant.jl" begin
-    InverseFunctions.test_inverse.(binomial2, 1:10, compare=isequal)
-    InverseFunctions.test_inverse.(inverse_binomial2, [0,1,3,6,10], compare=isequal)
+    InverseFunctions.test_inverse.(binomial2, 1:10, compare = isequal)
+    InverseFunctions.test_inverse.(inverse_binomial2, [0, 1, 3, 6, 10], compare = isequal)
 
     @testset "index_triangular_nodiag" begin
         N = 100
@@ -38,11 +38,12 @@ using Test
         @test size(m3.square_distances) == (6,)
         @test m3.square_distances == [1, 1, 2, 1, 2, 2]
         @test m3 == CayleyMengerDistanceMatrix((1, 1, 1), (1, 1, 0), (0, 1, 1), (1, 0, 1))
+        @test m3 == CayleyMengerDistanceMatrix([1 1 1; 1 1 0; 0 1 1; 1 0 1])
     end
 
     @testset "simplex_volume" begin
         @test simplex_volume(()) == false
-        @test simplex_volume((), distance_type=Int) == 0
+        @test simplex_volume((), distance_type = Int) == 0
 
         @test simplex_volume((0,), (1,)) == 1
         @test simplex_volume((1,), (2,)) == 1
@@ -52,11 +53,13 @@ using Test
 
         @test simplex_volume((0, 0), (1, 0), (0, 1)) == 1 / 2
         @test simplex_volume((0, 0), (0, 2), (-2, 0)) == 2
-        @test simplex_volume((0, 0), (0, 2), (-2, 0), distance_type=Int) == 2
+        @test simplex_volume((0, 0), (0, 2), (-2, 0), distance_type = Int) == 2
 
         @test simplex_volume((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)) == 1 / 6
         @test simplex_volume((1, 1, 1), (1, 1, 0), (0, 1, 1), (1, 0, 1)) == 1 / 6
         @test simplex_volume((1, 1, 1), (1, 1, 2), (2, 1, 1), (1, 2, 1)) == 1 / 6
         @test simplex_volume((0, 0, 0), (0, 1, 2), (2, 1, 0), (0, 2, 0)) == 4 / 3
+
+        @test simplex_volume([0 0 0; 1 0 0; 0 1 0; 0 0 1]) == 1 / 6
     end
 end
