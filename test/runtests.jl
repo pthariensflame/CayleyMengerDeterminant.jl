@@ -3,10 +3,14 @@ import InverseFunctions
 using Test
 
 @testset "CayleyMengerDeterminant.jl" begin
-    InverseFunctions.test_inverse.(binomial2, 1:10, compare = isequal)
+    InverseFunctions.test_inverse.(
+        binomial2,
+        [1, 2, 3, 4, 5, 6, Dynamic(), StaticInt(2), StaticInt(3)],
+        compare = isequal,
+    )
     InverseFunctions.test_inverse.(
         inverse_binomial2,
-        [0, 1, 3, 6, 10, 15],
+        [0, 1, 3, 6, 10, 15, Dynamic(), StaticInt(1), StaticInt(3)],
         compare = isequal,
     )
 

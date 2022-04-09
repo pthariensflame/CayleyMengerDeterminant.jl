@@ -1,24 +1,15 @@
 module CayleyMengerDeterminant
 using LinearAlgebra
 import ArrayInterface
-using Static
+using Static: StaticInt
 using StaticArrays
+import StaticArrays: Dynamic
 import InverseFunctions
 
 ### utility functions
-"""
-    MaybeStaticArray(ElTy::Type, SzTy::Type{<:Union{Int,StaticInt}})::Type{<:Union{Vector,SVector}}
-
-Constructs an SVector{N,ElTy} if SzTy == StaticInt{N}, and a Vector{ElTy} if SzTy == Int.
-"""
-function MaybeStaticVector end
-
-@inline @pure function MaybeStaticVector(::Type{ElTy}, ::Type{Int}) where {ElTy} = Vector{ElTy}
-
-@inline @pure function MaybeStaticVector(::Type{ElTy}, ::Type{StaticInt{N}}) where {ElTy,N} = SVector{N,ElTy}
 
 """
-    binomial2(x::Int)::Int
+    binomial2(x::Union{Int,StaticInt,Dynamic}) -> Union{Int,StaticInt,Dynamic}
 
 Compute the second binomial coefficient of `x`.
 
@@ -29,10 +20,16 @@ julia> binomial2(4)
 6
 ```
 """
-@inline @pure binomial2(x::Int)::Int = binomial(x, 2)
+function binomial2 end
+
+@inline binomial2(x::Int)::Int = binomial(x, 2)
+
+@inline binomial2(::StaticInt{X}) where {X} = StaticInt{binomial2(x)}
+
+@inline binomial2(::Dynamic) = Dynamic()
 
 """
-    inverse_binomial2(x::Int)::Int
+    inverse_binomial2(x::Union{Int,StaticInt,Dynamic) -> Union{Int,StaticInt,Dynamic}
 
 Compute the integer value that `x` is the second binomial coefficient of.
 
@@ -43,16 +40,24 @@ julia> inverse_binomial2(6)
 4
 ```
 """
-@inline @pure inverse_binomial2(x::Int)::Int = (convert(Int, sqrt(8x + 1)) + 1) ÷ 2
+function inverse_binomial2 end
+
+@inline inverse_binomial2(x::Int)::Int = (convert(Int, sqrt(8x + 1)) + 1) ÷ 2
+
+@inline inverse_binomial2(::StaticInt{X}) where {X} = StaticInt{inverse_binomial2(x)}
+
+@inline inverse_binomial2(::Dynamic) = Dynamic()
 
 InverseFunctions.inverse(::typeof(binomial2)) = inverse_binomial2
 
 InverseFunctions.inverse(::typeof(inverse_binomial2)) = binomial2
 
 """
-    CayleyMengerDeterminant.index_triangular_nodiag(ixA::Int, ixB::Int)::Int
+    CayleyMengerDeterminant.index_triangular_nodiag(ixA::Int, ixB::Int) -> Int
 
-Compute the linear index into the vector storage for a symmetric or lower-triangular matrix at row `ixA` and column `ixB`.
+For row `ixA` and column `ixB`, compute the linear index into the flat vector storage for a symmetric or
+lower-triangular matrix with a zero diagonal.
+
 
 `ixA` and `ixB` are both 1-based and contiguous, and `ixA` is assumed to be greater than or equal to `ixB`.
 
@@ -61,16 +66,16 @@ julia> CayleyMengerDeterminant.index_triangular_nodiag(4,2)
 5
 ```
 """
-@inline @pure index_triangular_nodiag(ixA::Int, ixB::Int)::Int = binomial2(ixA - 1) + ixB
+@inline index_triangular_nodiag(ixA::Int, ixB::Int)::Int = binomial2(ixA - 1) + ixB
 
 export binomial2, inverse_binomial2
 
 ### main matrix type
 
 """
-    CayleyMengerDistanceMatrix{T,Sz}(simplex_dimensions::Sz, square_distances::Vector{T}) where {T<:Real,Sz<:Union{Int,StaticInt}}
-    CayleyMengerDistanceMatrix(points::Vararg{NTuple{N,T},N+1})::CayleyMengerDistanceMatrix{T,StaticInt{N}} where {T<:Real,N::Int}
-    CayleyMengerDistanceMatrix(P::AbstractMatrix{T})::CayleyMengerDistanceMatrix{T,Int} where {T<:Real}
+    CayleyMengerDistanceMatrix{T,Sz}(simplex_dimensions::Int, square_distances::Vector{T}) where {T<:Real,Sz::Union{Int,Dynamic}}
+    CayleyMengerDistanceMatrix(points::Vararg{NTuple{N,T},N+1})::CayleyMengerDistanceMatrix{T,N} where {T<:Real,N::Int}
+    CayleyMengerDistanceMatrix(P::AbstractMatrix{T})::CayleyMengerDistanceMatrix{T,Dynamic} where {T<:Real}
 
 The zero-diagonal symmetric matrix of square distances among the points of an `N`-simplex, backed by efficient linear storage.
 
@@ -81,16 +86,16 @@ When providing `simplex_dimensions` and `square_distances` directly, `simplex_di
 `N` of the `N-simplex, and `square_distances` must be the precomputed backing linear storage of the square distances among the
 points of the `N`-simplex and so must have length `binomial2(simplex_dimensions + 1)`.
 """
-struct CayleyMengerDistanceMatrix{T<:Real,Sz<:Union{Int,StaticInt}} <: AbstractMatrix{T}
+struct CayleyMengerDistanceMatrix{T<:Real,Sz} <: AbstractMatrix{T}
     "The number of dimensions `N` of the `N`-simplex whose points are being calculated with."
-    simplex_dimensions::Sz
+    simplex_dimensions::Int
 
     "The squared distances of points in the simplex, in natural iteration order as initially given, stored flat and triangular for efficiency."
-    square_distances::MaybeStaticVector(T,Sz)
+    square_distances::Vector{T}
 end
 
 CayleyMengerDistanceMatrix(onlyPoint::Tuple{}) =
-    CayleyMengerDistanceMatrix{Union{},StaticInt{0}}(StaticInt(0), SVector{0,Union{}}())
+    CayleyMengerDistanceMatrix{Union{},0}(0, (Union{})[])
 
 function CayleyMengerDistanceMatrix(
     first_point::NTuple{N,T},
@@ -107,7 +112,7 @@ function CayleyMengerDistanceMatrix(
         end
     end
 
-    CayleyMengerDistanceMatrix{T,StaticInt{N}}(StaticInt(N), SArray{num_distances}(sqr_dists))
+    CayleyMengerDistanceMatrix{T,N}(N, sqr_dists)
 end
 
 function CayleyMengerDistanceMatrix(P::AbstractMatrix{T}) where {T<:Real}
@@ -122,7 +127,7 @@ function CayleyMengerDistanceMatrix(P::AbstractMatrix{T}) where {T<:Real}
         end
     end
 
-    CayleyMengerDistanceMatrix{T,Int}(n, sqr_dists)
+    CayleyMengerDistanceMatrix{T,Dynamic}(n, sqr_dists)
 end
 
 export CayleyMengerDistanceMatrix
@@ -175,6 +180,13 @@ LinearAlgebra.issymmetric(::CayleyMengerDistanceMatrix) = true
 
 LinearAlgebra.ishermitian(::CayleyMengerDistanceMatrix) = true
 
+### StaticArrays integration
+
+@inline function StaticArrays.Size(A::CayleyMengerDistanceMatrix{T,Sz}) where {T<:Real,Sz}
+    N = Sz isa Dynamic ? Dynamic() : Sz + 2
+    N, N
+end
+
 ### ArrayInterface integration
 
 ArrayInterface.can_change_size(::Type{<:CayleyMengerDistanceMatrix}) = false
@@ -211,7 +223,7 @@ end
 
 ArrayInterface.getindex(A::CayleyMengerDistanceMatrix, i::Int, j::Int) = A[i, j]
 
-ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,StaticInt{N}}) where {T<:Real,N} =
+ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,N}) where {T<:Real,N} =
     (StaticInt(N + 2), StaticInt(N + 2))
 
 ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,Int}) where {T<:Real} =
@@ -241,11 +253,11 @@ If `distance_type` is provided and is not `nothing`, then the internal calculati
 function simplex_volume end
 
 function simplex_volume(
-    distances::CayleyMengerDistanceMatrix{T,Sz};
+    distances::CayleyMengerDistanceMatrix{T};
     distance_type::Union{Nothing,Type{<:Real}} = nothing,
-) where {T<:Real,Sz<:Union{Int,StaticInt}}
+) where {T<:Real}
     Ty = isnothing(distance_type) ? T : distance_type
-    n = distances.simplex_dimensions
+    n::Int = distances.simplex_dimensions
     n == 0 && return simplex_volume((); distance_type)
     distances_converted = convert(Ty, distances)
     sqrt(abs(det(distances_converted)) / (2^n)) / factorial(n)
