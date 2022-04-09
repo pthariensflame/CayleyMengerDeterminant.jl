@@ -210,6 +210,7 @@ ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,Int}) where {T<:Real} =
 # the operation
 
 """
+    simplex_volume(distances::CayleyMengerDistanceMatrix{T,Sz}; distance_type::Union{Nothing,Type{<:Real}} = nothing) where {N,T<:Real}
     simplex_volume(points::Vararg{NTuple{N,T},N+1}; distance_type::Union{Nothing,Type{<:Real}} = nothing) where {N,T<:Real}
     simplex_volume(P::AbstractMatrix{T}; distance_type::Union{Nothing,Type{<:Real}} = nothing) where {T<:Real}
 
@@ -228,13 +229,21 @@ If `distance_type` is provided and is not `nothing`, then the internal calculati
 `distance_type` as the type; otherwise, the type used for the internal calculations will be automatically derived from `T`.
 """
 function simplex_volume(
+    distances::CayleyMengerDistanceMatrix{T,Sz};
+    distance_type::Union{Nothing,Type{<:Real}} = nothing,
+) where {T<:Real,Sz<:Union{Int,StaticInt}}
+    Ty = isnothing(distance_type) ? T : distance_type
+    n = distances.simplex_dimensions
+    distances_converted = convert(Ty, distances)
+    sqrt(abs(det(distances_converted)) / (2^n)) / factorial(n)
+end
+
+function simplex_volume(
     points::NTuple{N,T}...;
     distance_type::Union{Nothing,Type{<:Real}} = nothing,
 ) where {N,T<:Real}
-    Ty = isnothing(distance_type) ? T : distance_type
     distances = CayleyMengerDistanceMatrix(points...)
-    distances_converted = convert(Ty, distances)
-    sqrt(abs(det(distances_converted)) / (2^N)) / factorial(N)
+    simplex_volume(distances; distance_type)
 end
 
 simplex_volume(::Tuple{}; distance_type::Union{Nothing,Type{<:Real}} = nothing) =
@@ -244,11 +253,8 @@ function simplex_volume(
     P::AbstractMatrix{T};
     distance_type::Union{Nothing,Type{<:Real}} = nothing,
 ) where {T<:Real}
-    Ty = isnothing(distance_type) ? T : distance_type
-    n = size(P, 2)
     distances = CayleyMengerDistanceMatrix(P)
-    distances_converted = convert(Ty, distances)
-    sqrt(abs(det(distances_converted)) / (2^n)) / factorial(n)
+    simplex_volume(distances; distance_type)
 end
 
 export simplex_volume
