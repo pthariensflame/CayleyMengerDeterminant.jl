@@ -23,7 +23,7 @@ julia> binomial2(4)
 """
     inverse_binomial2(x::Int)::Int
 
-Compute the value of `y` that `x` is the second binomial coefficient of.
+Compute the integer value that `x` is the second binomial coefficient of.
 
 This function is the inverse of `binomial2`.
 
@@ -41,9 +41,9 @@ InverseFunctions.inverse(::typeof(inverse_binomial2)) = binomial2
 """
     CayleyMengerDeterminant.index_triangular_nodiag(ixA::Int, ixB::Int)::Int
 
-Compute the linear index into the vector storage for a zero-diagonal symmetric matrix at row `ixA` and column `ixB`.
+Compute the linear index into the vector storage for a symmetric or lower-triangular matrix at row `ixA` and column `ixB`.
 
-This function is the inverse of `binomial2`.
+`ixA` and `ixB` are both 1-based and contiguous, and `ixA` is assumed to be greater than or equal to `ixB`.
 
 ```julia-repl
 julia> CayleyMengerDeterminant.index_triangular_nodiag(4,2)
