@@ -228,6 +228,8 @@ points of the `N`-simplex.
 If `distance_type` is provided and is not `nothing`, then the internal calculations on the squared distances will be done using
 `distance_type` as the type; otherwise, the type used for the internal calculations will be automatically derived from `T`.
 """
+function simplex_volume end
+
 function simplex_volume(
     distances::CayleyMengerDistanceMatrix{T,Sz};
     distance_type::Union{Nothing,Type{<:Real}} = nothing,
