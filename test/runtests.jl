@@ -1,7 +1,11 @@
 using CayleyMengerDeterminant
+import InverseFunctions
 using Test
 
 @testset "CayleyMengerDeterminant.jl" begin
+    InverseFunctions.test_inverse.(binomial2, 1:10, compare=isequal)
+    InverseFunctions.test_inverse.(inverse_binomial2, [0,1,3,6,10], compare=isequal)
+
     @testset "index_triangular_nodiag" begin
         N = 100
         v = zeros(Int, binomial(N, 2))
@@ -10,7 +14,9 @@ using Test
                 v[CayleyMengerDeterminant.index_triangular_nodiag(ixA, ixB)] += 1
             end
         end
-        @test all(v .== 1)
+        for k in v
+            @test k == 1
+        end
     end
 
     @testset "CayleyMengerDistanceMatrix" begin
@@ -35,7 +41,8 @@ using Test
     end
 
     @testset "simplex_volume" begin
-        @test simplex_volume(()) == 0
+        @test simplex_volume(()) == false
+        @test simplex_volume((), distance_type=Int) == 0
 
         @test simplex_volume((0,), (1,)) == 1
         @test simplex_volume((1,), (2,)) == 1
@@ -45,6 +52,7 @@ using Test
 
         @test simplex_volume((0, 0), (1, 0), (0, 1)) == 1 / 2
         @test simplex_volume((0, 0), (0, 2), (-2, 0)) == 2
+        @test simplex_volume((0, 0), (0, 2), (-2, 0), distance_type=Int) == 2
 
         @test simplex_volume((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)) == 1 / 6
         @test simplex_volume((1, 1, 1), (1, 1, 0), (0, 1, 1), (1, 0, 1)) == 1 / 6
