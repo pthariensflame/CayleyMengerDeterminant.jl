@@ -4,7 +4,11 @@ using Test
 
 @testset "CayleyMengerDeterminant.jl" begin
     InverseFunctions.test_inverse.(binomial2, 1:10, compare = isequal)
-    InverseFunctions.test_inverse.(inverse_binomial2, [0, 1, 3, 6, 10], compare = isequal)
+    InverseFunctions.test_inverse.(
+        inverse_binomial2,
+        [0, 1, 3, 6, 10, 15],
+        compare = isequal,
+    )
 
     @testset "index_triangular_nodiag" begin
         N = 100

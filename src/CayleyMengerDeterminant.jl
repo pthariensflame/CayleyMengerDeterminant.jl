@@ -6,22 +6,75 @@ import InverseFunctions
 
 ### utility functions
 
+"""
+    binomial2(x::Int)::Int
+
+Compute the second binomial coefficient of `x`.
+
+This function is a convenience shorthand for `binomial(x, 2)`.
+
+```julia-repl
+julia> binomial2(4)
+6
+```
+"""
 @inline binomial2(x::Int)::Int = binomial(x, 2)
 
+"""
+    inverse_binomial2(x::Int)::Int
+
+Compute the value of `y` that `x` is the second binomial coefficient of.
+
+This function is the inverse of `binomial2`.
+
+```julia-repl
+julia> inverse_binomial2(6)
+4
+```
+"""
 @inline inverse_binomial2(x::Int)::Int = (convert(Int, sqrt(8x + 1)) + 1) ÷ 2
 
 InverseFunctions.inverse(::typeof(binomial2)) = inverse_binomial2
 
 InverseFunctions.inverse(::typeof(inverse_binomial2)) = binomial2
 
+"""
+    CayleyMengerDeterminant.index_triangular_nodiag(ixA::Int, ixB::Int)::Int
+
+Compute the linear index into the vector storage for a zero-diagonal symmetric matrix at row `ixA` and column `ixB`.
+
+This function is the inverse of `binomial2`.
+
+```julia-repl
+julia> CayleyMengerDeterminant.index_triangular_nodiag(4,2)
+5
+```
+"""
 @inline index_triangular_nodiag(ixA::Int, ixB::Int)::Int = binomial2(ixA - 1) + ixB
 
 export binomial2, inverse_binomial2
 
 ### main matrix type
 
+"""
+    CayleyMengerDistanceMatrix{T,Sz}(simplex_dimensions::Sz, square_distances::Vector{T}) where {T<:Real,Sz<:Union{Int,StaticInt}}
+    CayleyMengerDistanceMatrix(points::Vararg{NTuple{N,T},N+1})::CayleyMengerDistanceMatrix{T,StaticInt{N}} where {T<:Real,N::Int}
+    CayleyMengerDistanceMatrix(P::AbstractMatrix{T})::CayleyMengerDistanceMatrix{T,Int} where {T<:Real}
+
+The zero-diagonal symmetric matrix of square distances among the points of an `N`-simplex, backed by efficient linear storage.
+
+When providing `points`, it must be N+1 tuples of N values each, which are the coordinates of the points of the `N`-simplex.
+When providing `P`, it must be a tall near-square matrix with N+1 rows and N columns, where the rows are the coordinates of the
+points of the `N`-simplex.
+When providing `simplex_dimensions` and `square_distances` directly, `simplex_dimensions` must be the integer number of dimension
+`N` of the `N-simplex, and `square_distances` must be the precomputed backing linear storage of the square distances among the
+points of the `N`-simplex and so must have length `binomial2(simplex_dimensions + 1)`.
+"""
 struct CayleyMengerDistanceMatrix{T<:Real,Sz<:Union{Int,StaticInt}} <: AbstractMatrix{T}
+    "The number of dimensions `N` of the `N`-simplex whose points are being calculated with."
     simplex_dimensions::Sz
+
+    "The squared distances of points in the simplex, in natural iteration order as initially given, stored flat and triangular for efficiency."
     square_distances::Vector{T}
 end
 
@@ -156,6 +209,24 @@ ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,Int}) where {T<:Real} =
 
 # the operation
 
+"""
+    simplex_volume(points::Vararg{NTuple{N,T},N+1}; distance_type::Union{Nothing,Type{<:Real}} = nothing) where {N,T<:Real}
+    simplex_volume(P::AbstractMatrix{T}; distance_type::Union{Nothing,Type{<:Real}} = nothing) where {T<:Real}
+
+Calculates the (interior) measure of an `N`-simplex given the coordinates of its points, using the Cayley-Menger
+determinant involving the squared distances between the points.
+
+For example, if `N == 2`, then this function calculates the area of a triangle given the 2-dimensional coordinates
+of its 3 points; likewise, if `N == 3`, then then this function calculates the volume of a tetrahedron given the
+3-dimensional coordinates of its 4 points.
+
+When providing `points`, it must be N+1 tuples of N values each, which are the coordinates of the points of the `N`-simplex.
+When providing `P`, it must be a tall near-square matrix with N+1 rows and N columns, where the rows are the coordinates of the
+points of the `N`-simplex.
+
+If `distance_type` is provided and is not `nothing`, then the internal calculations on the squared distances will be done using
+`distance_type` as the type; otherwise, the type used for the internal calculations will be automatically derived from `T`.
+"""
 function simplex_volume(
     points::NTuple{N,T}...;
     distance_type::Union{Nothing,Type{<:Real}} = nothing,
