@@ -93,10 +93,13 @@ struct CayleyMengerDistanceMatrix{T<:Real,Sz} <: AbstractMatrix{T}
     "The squared distances of points in the simplex, in natural iteration order as initially given, stored flat and triangular for efficiency."
     square_distances::Vector{T}
 
-    function CayleyMengerDistanceMatrix{T,Sz}(simplex_dimensions::Int,square_distances::Vector{T}) where {T<:Real,Sz}
+    function CayleyMengerDistanceMatrix{T,Sz}(
+        simplex_dimensions::Int,
+        square_distances::Vector{T},
+    ) where {T<:Real,Sz}
         @assert Sz == Dynamic || Sz == simplex_dimensions
         @assert length(square_distances) == binomial2(simplex_dimensions + 1)
-        new{T,Sz}(simplex_dimensions,square_distances)
+        new{T,Sz}(simplex_dimensions, square_distances)
     end
 end
 
@@ -160,12 +163,14 @@ Base.convert(::Type{U}, A::CayleyMengerDistanceMatrix{T,Sz}) where {U<:Real,T<:R
     CayleyMengerDistanceMatrix{U,Sz}(A.simplex_dimensions, convert.(U, A.square_distances))
 
 "Computes `only` on all non-`Dynamic()` arguments unless all arguments are `Dynamic()`, in which case it returns `Dynamic()`."
-only_or_dynamic(vals...) = all(vals .== Dynamic()) ? Dynamic() : only([v for v in vals if v != Dynamic()])
+only_or_dynamic(vals...) =
+    all(vals .== Dynamic()) ? Dynamic() : only([v for v in vals if v != Dynamic()])
 
 Base.promote_rule(
     ::Type{<:CayleyMengerDistanceMatrix{T,SzT}},
     ::Type{<:CayleyMengerDistanceMatrix{U,SzU}},
-) where {T<:Real,U<:Real,SzT,SzU} = CayleyMengerDistanceMatrix{promote_type(T, U),only_or_dynamic(SzT, SzU)}
+) where {T<:Real,U<:Real,SzT,SzU} =
+    CayleyMengerDistanceMatrix{promote_type(T, U),only_or_dynamic(SzT, SzU)}
 
 ### AbstractArray interface
 
