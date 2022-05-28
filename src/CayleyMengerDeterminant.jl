@@ -267,8 +267,10 @@ ArrayInterface.axes(A::CayleyMengerDistanceMatrix{T,Dynamic}) where {T<:Real} =
 ArrayInterface.axes(::CayleyMengerDistanceMatrix{T,N}, i) where {T<:Real,N} =
     (SOneTo{N + 2}(), SOneTo{N + 2}())
 
-ArrayInterface.axes(A::CayleyMengerDistanceMatrix{T,Dynamic}, i::Union{Int,StaticInt}) where {T<:Real} =
-    OneTo(A.simplex_dimensions + 2)
+ArrayInterface.axes(
+    A::CayleyMengerDistanceMatrix{T,Dynamic},
+    i::Union{Int,StaticInt},
+) where {T<:Real} = OneTo(A.simplex_dimensions + 2)
 
 # the operation
 
