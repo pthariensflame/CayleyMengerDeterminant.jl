@@ -11,7 +11,7 @@ Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-ArrayInterface = "5.0.7"
+ArrayInterface = "5.0.7, 6"
 InverseFunctions = "0.1.3"
 Static = "0.4.1 - 0.6"
 StaticArrays = "1.4.3"
